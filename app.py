@@ -1,6 +1,19 @@
 import streamlit as st
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+
+def get_pdf_text(docs):
+    text = ""
+    for pdf in docs:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
+
 
 def main():
+    
+    load_dotenv()
     st.set_page_config(
         page_title="Document Q&A",
         page_icon="📄",
@@ -74,23 +87,6 @@ def main():
             font-size: 13px;
             color: #9ca3af;
         }
-
-        .stButton > button {
-            width: 100%;
-            background-color: #111827;
-            color: white;
-            border: 1px solid #6b7280;
-            border-radius: 10px;
-            padding: 10px 0;
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .stButton > button:hover {
-            background-color: #2563eb;
-            border-color: #2563eb;
-            color: white;
-        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -99,20 +95,16 @@ def main():
     with col2:
         st.markdown('<div class="main-title">Document Q&A</div>', unsafe_allow_html=True)
         st.markdown('<div class="ask-label">Ask</div>', unsafe_allow_html=True)
-        st.text_input("", placeholder="Type your question here...")
+        st.text_input("Ask", placeholder="Type your question here...", label_visibility="collapsed")
 
     with st.sidebar:
         st.subheader("Documents")
 
-        st.markdown("""
-            <div class="upload-box">
-                <div class="upload-text">Drag and drop file here</div>
-                <div class="upload-subtext">Limit 200MB per file</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-        st.file_uploader("Upload", label_visibility="collapsed")
-        st.button("Process")
+        docs = st.file_uploader("Upload", label_visibility="collapsed", accept_multiple_files = True)
+        if st.button("Process"):
+            st.spinner("Processing")
+            raw_text = get_pdf_text(docs)
+            st.write(raw_text)
 
 if __name__ == '__main__':
     main()
