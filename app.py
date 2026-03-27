@@ -7,6 +7,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_classic.chains.conversational_retrieval.base import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
+from langchain_groq import ChatGroq
 
 def get_pdf_text(docs):
     text = ""
@@ -30,14 +31,34 @@ def get_vectorstore(text_chunks):
     return vectorstore
     
 def get_conversation_chain(vector_store):
-    llm = ChatOpenAI()
-    memory = ConversationBufferMemory(memory_key = "chat_history", return_message = True)
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",  # fast, free, reliable
+        temperature=0,
+    )
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True
+    )
     conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm = llm,
-        retriever = vector_store.as_retriever(),
-        memory = memory
+        llm=llm,
+        retriever=vector_store.as_retriever(),
+        memory=memory
     )
     return conversation_chain
+
+def handle_userinput(user_question):
+    if st.session_state.conversation is None:
+        st.info("Please upload your PDFs and click 'Process' to start the chat.")
+        return
+    
+    response = st.session_state.conversation({'question': user_question})
+    st.session_state.chat_history = response['chat_history']
+
+    for i, message in enumerate(st.session_state.chat_history):
+        if i % 2 == 0:
+            st.write(user_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
+        else:
+            st.write(bot_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
 
 def main():
     load_dotenv()
@@ -52,10 +73,10 @@ def main():
         st.session_state.conversation = None
 
     st.header("Chat with PDFs")
-    st.text_input("Ask", placeholder="Type your question here...", label_visibility="collapsed")
+    user_question = st.text_input("Ask", placeholder="Type your question here...", label_visibility="collapsed")
 
-    st.write(user_template.replace("{{MSG}}", "Hello Robot"), unsafe_allow_html= True)
-    st.write(bot_template.replace("{{MSG}}", "Hello Human"), unsafe_allow_html= True)
+    if user_question:
+        handle_userinput(user_question)
 
     with st.sidebar:
         st.subheader("Documents")
@@ -66,6 +87,7 @@ def main():
                 with st.spinner("Processing..."):
                         raw_text = get_pdf_text(docs)
                         text_chunks = get_text_chunks(raw_text)
+                        st.write(text_chunks)
                         vector_store = get_vectorstore(text_chunks)
                         conversation = get_conversation_chain(vector_store)
                         st.session_state.conversation = conversation
