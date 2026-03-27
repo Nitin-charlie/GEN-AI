@@ -11,7 +11,7 @@ The main objective is to build an intelligent system that can understand and ext
 ---
 
 ## 3. Methodology
-The project uses **Retrieval-Augmented Generation (RAG)**. The workflow includes:
+The workflow includes:
 
 - Uploading a PDF  
 - Extracting text  
@@ -29,7 +29,7 @@ The project uses **Retrieval-Augmented Generation (RAG)**. The workflow includes
 - Streamlit (Frontend)  
 - LangChain (Framework)  
 - FAISS (Vector Database)  
-- Llama 3 via Ollama (LLM)  
+- Llama 3 via Groq (LLM)  
 
 ---
 
