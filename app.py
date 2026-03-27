@@ -4,6 +4,8 @@ from PyPDF2 import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.chains.conversational_retrieval.base import ConversationalRetrievalChain
 
 def get_pdf_text(docs):
     text = ""
@@ -26,9 +28,17 @@ def get_vectorstore(text_chunks):
     vectorstore = FAISS.from_texts(texts = text_chunks, embedding = embeddings)
     return vectorstore
     
+def get_conversation_chain(vector_store):
+    llm = ChatOpenAI()
+    memory = ConversationBufferMemory(memory_key = "chat_history", return_message = True)
+    conversation_chain = ConversationalRetrievalChain.from_llm(
+        llm = llm,
+        retriever = vector_store.as_retriever(),
+        memory = memory
+    )
+    return conversation_chain
 
 def main():
-    
     load_dotenv()
     st.set_page_config(
         page_title="Document Q&A",
@@ -44,6 +54,9 @@ def main():
     with st.sidebar:
         st.subheader("Documents")
 
+        if("conversation" not in st.session_state):
+            st.session_state.conversation = None
+        
         docs = st.file_uploader("Upload", label_visibility="collapsed", accept_multiple_files = True)
         if st.button("Process"):
             if docs:
@@ -51,6 +64,8 @@ def main():
                         raw_text = get_pdf_text(docs)
                         text_chunks = get_text_chunks(raw_text)
                         vector_store = get_vectorstore(text_chunks)
+                        conversation = get_conversation_chain(vector_store)
+                        st.session_state.conversation = conversation
             else:
                 st.warning("Please upload at least one PDF.")
 
