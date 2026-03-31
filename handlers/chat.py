@@ -14,3 +14,9 @@ def handle_userinput(user_question):
             st.write(user_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
         else:
             st.write(bot_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
+
+    if "source_documents" in response:
+        with st.expander("📄 View Sources"):
+            for i, doc in enumerate(response["source_documents"]):
+                st.markdown(f"**Chunk {i+1}:**")
+                st.write(doc.page_content[:300])
