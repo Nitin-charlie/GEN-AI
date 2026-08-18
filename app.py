@@ -1,5 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
+from streamlit_mic_recorder import speech_to_text
 
 from rag.pdf import get_pdf_text
 from rag.text_splitter import get_text_chunks
@@ -8,6 +9,7 @@ from rag.chain import get_conversation_chain
 from handlers.chat import handle_userinput
 
 from htmlTemplates import css
+
 
 def main():
     load_dotenv()
@@ -25,14 +27,39 @@ def main():
 
     st.header("Chat with PDFs")
 
-    user_question = st.text_input(
-        "Ask",
-        placeholder="Type your question here...",
-        label_visibility="collapsed"
-    )
+    # -------------------------
+    # Text + Voice Input
+    # -------------------------
+
+    col1, col2 = st.columns([8, 1])
+
+    with col1:
+        user_question = st.text_input(
+            "Ask",
+            placeholder="Type your question here...",
+            label_visibility="collapsed"
+        )
+
+    with col2:
+        voice_question = speech_to_text(
+            language="en",
+            start_prompt="🎤",
+            stop_prompt="⏹️",
+            use_container_width=True,
+            just_once=True,
+            key="voice_input"
+        )
+
+    # Use voice question if available
+    if voice_question:
+        user_question = voice_question
 
     if user_question:
         handle_userinput(user_question)
+
+    # -------------------------
+    # PDF Upload
+    # -------------------------
 
     with st.sidebar:
         st.subheader("Documents")
@@ -53,8 +80,12 @@ def main():
                     conversation = get_conversation_chain(vector_store)
 
                     st.session_state.conversation = conversation
+
+                st.success("PDF processed successfully!")
+
             else:
                 st.warning("Please upload at least one PDF.")
+
 
 if __name__ == '__main__':
     main()

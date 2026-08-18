@@ -12,7 +12,7 @@ prompt = PromptTemplate(
 
 def get_conversation_chain(vector_store):
     llm = ChatGroq(
-        model="llama-3.1-8b-instant",
+       model="openai/gpt-oss-120b",
         temperature=0,
     )
 
